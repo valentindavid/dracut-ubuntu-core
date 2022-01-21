@@ -1,0 +1,14 @@
+Source: dracut-ubuntu-core
+Section: utils
+Priority: optional
+Maintainer: Valentin David <valentin.david@canonical.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.5.1
+Rules-Requires-Root: no
+
+Package: dracut-ubuntu-core
+Architecture: any
+Depends: busybox, systemd, dracut-core, systemd-bootchart, snapd, ${shlibs:Depends}, ${misc:Depends}
+Description: Dracut modules to Ubuntu Core initramfs
+ This provides modules to Dracut in order to build and initramfs
+ image for Ubuntu Core.

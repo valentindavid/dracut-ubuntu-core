@@ -1,0 +1,5 @@
+dracut-ubuntu-core (0.1) UNRELEASED; urgency=medium
+
+  * Initial Release.
+
+ -- Valentin David <valentin.david@canonical.com>  Thu, 20 Jan 2022 10:20:19 +0100

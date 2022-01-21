@@ -1,0 +1,11 @@
+[Unit]
+DefaultDependencies=no
+Before=initrd-root-fs.target
+
+After=run-mnt-base.mount
+After=the-tool.service
+
+[Mount]
+What=/run/mnt/base
+Type=none
+Options=bind
