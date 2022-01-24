@@ -47,6 +47,13 @@ objcopy                                                         \
     --set-section-alignment .sbat=4096                          \
     kernel.efi-"${kernelver}"
 
+if ! [ -r PkKek-1-snakeoil.key ]; then
+    wget https://raw.githubusercontent.com/snapcore/core-initrd/main/snakeoil/PkKek-1-snakeoil.key
+fi
+if ! [ -r PkKek-1-snakeoil.pem ]; then
+    wget https://raw.githubusercontent.com/snapcore/core-initrd/main/snakeoil/PkKek-1-snakeoil.pem
+fi
+
 sbsign                                          \
     --key PkKek-1-snakeoil.key                  \
     --cert PkKek-1-snakeoil.pem                 \
