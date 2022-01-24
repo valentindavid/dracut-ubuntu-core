@@ -28,8 +28,18 @@ dracut                                                          \
 # is set in the binary, so we remove it.
 objcopy --remove-section .cmdline kernel.efi-"${kernelver}"
 
-# Dracut does not yet allow to add that.
-# We should probably submit a patch.
+# FIXME: the systemd package should probably add .sbat section in the
+# stub.
+if ! [ -r sbat.txt ]; then
+    systemd_version="$(pkg-config --modversion systemd)"
+    systemd_package_version="$(dpkg-query --show --showformat='${Version}' systemd)"
+    cat <<EOF >sbat.txt
+sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
+systemd,1,The systemd Developers,systemd,${systemd_version},https://www.freedesktop.org/wiki/Software/systemd
+systemd.ubuntu,1,Ubuntu,systemd,${systemd_package_version},https://bugs.launchpad.net/ubuntu/
+EOF
+fi
+
 objcopy                                                         \
     --add-section .sbat=sbat.txt                                \
     --set-section-flags .sbat=contents,alloc,load,readonly,data \

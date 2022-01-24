@@ -10,7 +10,6 @@ target Ubuntu Core version:
  - Build this dracut-ubuntu-core .deb package and install it
  - Install lz4 sbsigntool xdelta3
  - Get `PkKek-1-snakeoil.{key,pem}` from core-initrd or your own keys
- - Get `sbat.txt` from core-initrd
  - Run `build-initrd.sh` or manually run the commands
  - This will have created a snap of pc-kernel
  - Build an image with ubuntu-image using that snap
