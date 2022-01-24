@@ -7,6 +7,9 @@ depends() {
 }
 
 install() {
+    inst_simple "${systemdutildir}"/systemd-sulogin-shell
+    inst_binary sulogin
+
     inst_simple "${systemdsystemunitdir}"/emergency.service
 
     inst_simple "${moddir}/emergency.conf" "${systemdsystemunitdir}"/emergency.service.d/core-override.conf
