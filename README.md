@@ -13,3 +13,6 @@ target Ubuntu Core version:
  - Run `build-initrd.sh` or manually run the commands
  - This will have created a snap of pc-kernel
  - Build an image with ubuntu-image using that snap
+
+To simplify this process `build-in-lxc.sh` will create a container and
+run all the commands.
