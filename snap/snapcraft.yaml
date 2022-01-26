@@ -1,0 +1,93 @@
+name: pc-kernel
+adopt-info: kernel
+summary: |
+    PC Kernel
+description: PC Kernel
+build-base: core22
+type: kernel
+grade: devel
+
+parts:
+  dracut-ubuntu-core:
+    source-type: local
+    source: .
+    plugin: meson
+    override-pull: |
+      apt-get install --no-install-recommends -y meson pkg-config dracut-core
+      snapcraftctl pull
+    override-build: |
+      snapcraftctl build
+      cp -Tra "${SNAPCRAFT_PART_INSTALL}" /
+    prime:
+    - -*
+
+  kernel:
+    after:
+    - dracut-ubuntu-core
+    plugin: nil
+    override-pull: |
+      apt-get install --no-install-recommends -y linux-image-generic lz4 busybox systemd dracut-core systemd-bootchart snapd
+      snapcraftctl set-version $(dpkg-query --show --showformat='${Version}' linux-image-generic)
+      snapcraftctl pull
+
+    override-build: |
+      kernelver="$(readlink /boot/vmlinuz | sed 's/^vmlinuz-//')"
+
+      dracut                                                        \
+        --no-hostonly                                               \
+        --lz4                                                       \
+        --uefi                                                      \
+        --modules core                                              \
+        --kmoddir "/usr/lib/modules/${kernelver}"                   \
+        --fwdir "/usr/lib/firmware"                                 \
+        --uefi-stub /usr/lib/systemd/boot/efi/linuxx64.efi.stub     \
+        --kernel-image "/boot/vmlinuz-${kernelver}"                 \
+        --kernel-cmdline "dummy"                                    \
+        kernel.efi-"${kernelver}" "${kernelver}"
+
+      objcopy --remove-section .cmdline kernel.efi-"${kernelver}"
+
+      # FIXME: get the systemd package to build with -Dsbat-distro
+      if ! [ -r sbat.txt ]; then
+        systemd_version="$(pkg-config --modversion systemd)"
+        systemd_package_version="$(dpkg-query --show --showformat='${Version}' systemd)"
+        cat <<EOF >sbat.txt
+      sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
+      systemd,1,The systemd Developers,systemd,${systemd_version},https://www.freedesktop.org/wiki/Software/systemd
+      systemd.ubuntu,1,Ubuntu,systemd,${systemd_package_version},https://bugs.launchpad.net/ubuntu/
+      EOF
+      fi
+
+      objcopy                                                       \
+        --add-section .sbat=sbat.txt                                \
+        --set-section-flags .sbat=contents,alloc,load,readonly,data \
+        --change-section-vma .sbat=0x50000                          \
+        --set-section-alignment .sbat=4096                          \
+        kernel.efi-"${kernelver}"
+
+      install -Dm700 kernel.efi-"${kernelver}" "${SNAPCRAFT_PART_INSTALL}/kernel.efi"
+
+      install -dm755 "${SNAPCRAFT_PART_INSTALL}/modules"
+      cp -ra "/usr/lib/modules/${kernelver}" "${SNAPCRAFT_PART_INSTALL}/modules/"
+      cp -ra "/usr/lib/firmware" "${SNAPCRAFT_PART_INSTALL}/"
+      install -dm755 "${SNAPCRAFT_PART_INSTALL}/lib"
+      ln -sf ../modules "${SNAPCRAFT_PART_INSTALL}/lib/"
+      ln -sf ../firmware "${SNAPCRAFT_PART_INSTALL}/lib/"
+
+  sign:
+    after:
+    - kernel
+    source-type: git
+    source: https://github.com/snapcore/core-initrd.git
+    source-commit: f783d1d9472e88581c88963b8c4efd1a35dcefcc
+    plugin: nil
+    override-pull: |
+      apt-get install --no-install-recommends -y sbsigntool
+      snapcraftctl pull
+
+    override-stage: |
+      sbsign                                                             \
+        --key "${SNAPCRAFT_PART_SRC}/snakeoil/PkKek-1-snakeoil.key"      \
+        --cert "${SNAPCRAFT_PART_SRC}/snakeoil/PkKek-1-snakeoil.pem"     \
+        --output "${SNAPCRAFT_STAGE}/kernel.efi"                         \
+        "${SNAPCRAFT_STAGE}/kernel.efi"

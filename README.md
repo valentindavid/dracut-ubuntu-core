@@ -16,3 +16,7 @@ target Ubuntu Core version:
 
 To simplify this process `build-in-lxc.sh` will create a container and
 run all the commands.
+
+It is also possible to run Snapcraft to build the pc-kernel snap.
+Since core22 has no LXD or multipass backend yet in Snapcraft,
+`build-snap.sh` is provided to run snapcraft in LXD.
