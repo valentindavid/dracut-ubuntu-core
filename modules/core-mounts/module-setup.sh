@@ -20,11 +20,10 @@ install() {
     rm "${initdir}${systemdutildir}/system-generators/systemd-gpt-auto-generator"
 
     inst_simple "${moddir}/the-modeenv" "/usr/lib/the-modeenv"
-    inst_simple "${moddir}/the-tool" "/usr/lib/the-tool"
 
     for i in                                    \
         populate-writable.service               \
-        the-tool.service                        \
+        snap-initramfs-mounts.service           \
         sysroot.mount                           \
         sysroot-writable.mount                  \
         sysroot-usr-lib-firmware.mount          \
@@ -34,7 +33,7 @@ install() {
     done
 
 
-    systemctl -q --root "$initdir" add-wants basic.target populate-writable.service the-tool.service
+    systemctl -q --root "$initdir" add-wants basic.target populate-writable.service snap-initramfs-mounts.service
     systemctl -q --root "$initdir" add-wants initrd-root-fs.target sysroot.mount
     systemctl -q --root "$initdir" add-wants initrd-fs.target sysroot-writable.mount sysroot-usr-lib-firmware.mount sysroot-usr-lib-modules.mount
 }
