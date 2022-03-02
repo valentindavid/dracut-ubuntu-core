@@ -14,6 +14,7 @@ if ! lxc restore "${container}" ${setup_snapshot}; then
     lxc exec "${container}" -- apt-get autoremove -y
     lxc exec "${container}" -- apt-get install -y --no-install-recommends snapd
     lxc exec "${container}" -- snap install snapcraft --classic --channel=latest/stable
+    lxc config set "${container}" security.syscalls.intercept.mknod true
     lxc stop "${container}"
     lxc snapshot "${container}" ${setup_snapshot}
 fi
