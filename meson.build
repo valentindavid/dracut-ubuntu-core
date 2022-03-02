@@ -12,3 +12,5 @@ subdir('modules/core-mounts')
 subdir('modules/core-recovery-chooser-trigger')
 subdir('modules/core-shell')
 subdir('modules/core-snap-bootstrap')
+
+subdir('modules/core-feature-server')
