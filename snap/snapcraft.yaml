@@ -12,9 +12,10 @@ parts:
     source-type: local
     source: .
     plugin: meson
-    override-pull: |
-      apt-get install --no-install-recommends -y meson pkg-config dracut-core
-      snapcraftctl pull
+    build-packages:
+    - meson
+    - pkg-config
+    - dracut-core
     override-build: |
       snapcraftctl build
       cp -Tra "${SNAPCRAFT_PART_INSTALL}" /
@@ -25,8 +26,16 @@ parts:
     after:
     - dracut-ubuntu-core
     plugin: nil
+    build-packages:
+    - linux-image-generic
+    - zstd
+    - busybox
+    - systemd
+    - dracut-core
+    - systemd-bootchart
+    - snapd
+    - sbsigntool
     override-pull: |
-      apt-get install --no-install-recommends -y linux-image-generic zstd busybox systemd dracut-core systemd-bootchart snapd
       snapcraftctl set-version $(dpkg-query --show --showformat='${Version}' linux-image-generic)
       snapcraftctl pull
 
@@ -34,18 +43,12 @@ parts:
       kernelver="$(readlink /boot/vmlinuz | sed 's/^vmlinuz-//')"
 
       dracut                                                        \
-        --no-hostonly                                               \
-        --zstd                                                      \
-        --uefi                                                      \
-        --modules core                                              \
-        --kmoddir "/usr/lib/modules/${kernelver}"                   \
-        --fwdir "/usr/lib/firmware"                                 \
-        --uefi-stub /usr/lib/systemd/boot/efi/linuxx64.efi.stub     \
-        --kernel-image "/boot/vmlinuz-${kernelver}"                 \
-        --kernel-cmdline "dummy"                                    \
+        --conf /usr/local/share/dracut-ubuntu-core/dracut.conf      \
         kernel.efi-"${kernelver}" "${kernelver}"
 
-      objcopy --remove-section .cmdline kernel.efi-"${kernelver}"
+      # FIXME: re-signing is not needed once the 2 next FIXMEs are
+      # fixed
+      sbattach --remove kernel.efi-"${kernelver}"
 
       # FIXME: get the systemd package to build with -Dsbat-distro
       if ! [ -r sbat.txt ]; then
@@ -65,29 +68,21 @@ parts:
         --set-section-alignment .sbat=4096                          \
         kernel.efi-"${kernelver}"
 
-      install -Dm700 kernel.efi-"${kernelver}" "${SNAPCRAFT_PART_INSTALL}/kernel.efi"
+      # FIXME: This is not needed from dracut 052
+      objcopy --remove-section .cmdline kernel.efi-"${kernelver}"
+
+      # FIXME: re-signing is not needed once the 2 previous FIXMEs are
+      # fixed
+      key="/usr/local/share/dracut-ubuntu-core/snakeoil/PkKek-1-snakeoil.key"
+      cert="/usr/local/share/dracut-ubuntu-core/snakeoil/PkKek-1-snakeoil.pem"
+      sbsign                       \
+        --key "${key}"             \
+        --cert "${cert}"           \
+        --output "kernel.efi"      \
+        kernel.efi-"${kernelver}"
+
+      install -Dm700 kernel.efi "${SNAPCRAFT_PART_INSTALL}/kernel.efi"
 
       install -dm755 "${SNAPCRAFT_PART_INSTALL}/modules"
       cp -ra "/usr/lib/modules/${kernelver}" "${SNAPCRAFT_PART_INSTALL}/modules/"
       cp -ra "/usr/lib/firmware" "${SNAPCRAFT_PART_INSTALL}/"
-      install -dm755 "${SNAPCRAFT_PART_INSTALL}/lib"
-      ln -sf ../modules "${SNAPCRAFT_PART_INSTALL}/lib/"
-      ln -sf ../firmware "${SNAPCRAFT_PART_INSTALL}/lib/"
-
-  sign:
-    after:
-    - kernel
-    source-type: git
-    source: https://github.com/snapcore/core-initrd.git
-    source-commit: f783d1d9472e88581c88963b8c4efd1a35dcefcc
-    plugin: nil
-    override-pull: |
-      apt-get install --no-install-recommends -y sbsigntool
-      snapcraftctl pull
-
-    override-stage: |
-      sbsign                                                             \
-        --key "${SNAPCRAFT_PART_SRC}/snakeoil/PkKek-1-snakeoil.key"      \
-        --cert "${SNAPCRAFT_PART_SRC}/snakeoil/PkKek-1-snakeoil.pem"     \
-        --output "${SNAPCRAFT_STAGE}/kernel.efi"                         \
-        "${SNAPCRAFT_STAGE}/kernel.efi"

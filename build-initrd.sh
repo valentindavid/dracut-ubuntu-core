@@ -10,22 +10,24 @@ kernelver="${config#config-}"
 
 objcopy -O binary -j .linux pc-kernel/kernel.efi kernel.img-"${kernelver}"
 
+mkdir -p layout/lib
+ln -s "${PWD}/pc-kernel/modules" layout/lib/modules
+ln -s "${PWD}/pc-kernel/firmware" layout/lib/firmware
+
 # There is a bug in dracut that does not allow to not have cmdline
 # so we provide "dummy". We should submit a patch.
-dracut                                                          \
-    --no-hostonly                                               \
-    --zstd                                                      \
-    --uefi                                                      \
-    --modules core                                              \
-    --kmoddir "${PWD}/pc-kernel/lib/modules/${kernelver}"       \
-    --fwdir "${PWD}/pc-kernel/lib/firmware"                     \
-    --uefi-stub /usr/lib/systemd/boot/efi/linuxx64.efi.stub     \
-    --kernel-image "${PWD}/kernel.img-${kernelver}"             \
-    --kernel-cmdline "dummy"                                    \
+dracut                                                  \
+    --conf /usr/share/dracut-ubuntu-core/dracut.conf    \
+    --kmoddir "${PWD}/layout/lib/modules/${kernelver}"  \
+    --fwdir "${PWD}/layout/lib/firmware"                \
+    --kernel-image "${PWD}/kernel.img-${kernelver}"     \
     kernel.efi-"${kernelver}" "${kernelver}"
 
-# The systemd kernel EFI stub does not allow cmdline from grub if it
-# is set in the binary, so we remove it.
+# FIXME: re-signing is not needed once the 2 next FIXMEs are
+# fixed
+sbattach --remove kernel.efi-"${kernelver}"
+
+# FIXME: This is not needed from dracut 052
 objcopy --remove-section .cmdline kernel.efi-"${kernelver}"
 
 # FIXME: the systemd package should probably add .sbat section in the
@@ -47,18 +49,16 @@ objcopy                                                         \
     --set-section-alignment .sbat=4096                          \
     kernel.efi-"${kernelver}"
 
-if ! [ -r PkKek-1-snakeoil.key ]; then
-    wget https://raw.githubusercontent.com/snapcore/core-initrd/main/snakeoil/PkKek-1-snakeoil.key
-fi
-if ! [ -r PkKek-1-snakeoil.pem ]; then
-    wget https://raw.githubusercontent.com/snapcore/core-initrd/main/snakeoil/PkKek-1-snakeoil.pem
-fi
-
+# FIXME: re-signing is not needed once the 2 previous FIXMEs are
+# fixed
+key="/usr/share/dracut-ubuntu-core/snakeoil/PkKek-1-snakeoil.key"
+cert="/usr/share/dracut-ubuntu-core/snakeoil/PkKek-1-snakeoil.pem"
 sbsign                                          \
-    --key PkKek-1-snakeoil.key                  \
-    --cert PkKek-1-snakeoil.pem                 \
+    --key "${key}"                              \
+    --cert "${cert}"                            \
     --output kernel.efi-"${kernelver}"          \
     kernel.efi-"${kernelver}"
+
 
 cp kernel.efi-"${kernelver}" pc-kernel/kernel.efi
 snap pack pc-kernel

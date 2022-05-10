@@ -14,3 +14,22 @@ subdir('modules/core-shell')
 subdir('modules/core-snap-bootstrap')
 
 subdir('modules/core-feature-server')
+
+pkgdatadir = join_paths(get_option('prefix'),
+                        get_option('datadir'),
+                        meson.project_name())
+
+configure_file(
+    input : 'dracut.conf.in',
+    output : 'dracut.conf',
+    configuration : {
+        'pkgdatadir': pkgdatadir
+    },
+    install_dir : pkgdatadir,
+)
+
+install_data(
+        'snakeoil/PkKek-1-snakeoil.pem',
+        'snakeoil/PkKek-1-snakeoil.key',
+        install_dir : pkgdatadir / 'snakeoil',
+)
