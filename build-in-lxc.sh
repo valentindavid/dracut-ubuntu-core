@@ -19,7 +19,7 @@ lxc exec ${container} --cwd "${projectdir}" -- debuild -us -uc
 
 lxc exec ${container} --env DEBIAN_FRONTEND=noninteractive -- apt-get install -y --no-install-recommends /root/dracut-ubuntu-core_0.1_amd64.deb
 
-lxc exec ${container} --env DEBIAN_FRONTEND=noninteractive -- apt-get install -y --no-install-recommends lz4 sbsigntool xdelta3 wget
+lxc exec ${container} --env DEBIAN_FRONTEND=noninteractive -- apt-get install -y --no-install-recommends zstd sbsigntool xdelta3 wget
 
 lxc exec ${container} --cwd "${projectdir}" -- bash -x build-initrd.sh
 

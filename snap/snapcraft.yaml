@@ -26,7 +26,7 @@ parts:
     - dracut-ubuntu-core
     plugin: nil
     override-pull: |
-      apt-get install --no-install-recommends -y linux-image-generic lz4 busybox systemd dracut-core systemd-bootchart snapd
+      apt-get install --no-install-recommends -y linux-image-generic zstd busybox systemd dracut-core systemd-bootchart snapd
       snapcraftctl set-version $(dpkg-query --show --showformat='${Version}' linux-image-generic)
       snapcraftctl pull
 
@@ -35,7 +35,7 @@ parts:
 
       dracut                                                        \
         --no-hostonly                                               \
-        --lz4                                                       \
+        --zstd                                                      \
         --uefi                                                      \
         --modules core                                              \
         --kmoddir "/usr/lib/modules/${kernelver}"                   \

@@ -14,7 +14,7 @@ objcopy -O binary -j .linux pc-kernel/kernel.efi kernel.img-"${kernelver}"
 # so we provide "dummy". We should submit a patch.
 dracut                                                          \
     --no-hostonly                                               \
-    --lz4                                                       \
+    --zstd                                                      \
     --uefi                                                      \
     --modules core                                              \
     --kmoddir "${PWD}/pc-kernel/lib/modules/${kernelver}"       \
