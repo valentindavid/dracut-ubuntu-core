@@ -4,18 +4,35 @@ summary: |
     PC Kernel
 description: PC Kernel
 build-base: core22
+confinement: strict
 type: kernel
 grade: devel
 
 parts:
+  dracut:
+    source-type: git
+    source: https://github.com/dracutdevs/dracut.git
+    source-commit: 0b339d7351ab999deb00263996e04806ea079708
+    build-packages:
+    - libkmod-dev
+    - pkg-config
+    - asciidoc
+    plugin: autotools
+    override-build: |
+      snapcraftctl build
+      cp -Tra "${SNAPCRAFT_PART_INSTALL}" /
+    prime:
+    - -*
+
   dracut-ubuntu-core:
+    after:
+    - dracut
     source-type: local
     source: .
     plugin: meson
     build-packages:
     - meson
     - pkg-config
-    - dracut-core
     override-build: |
       snapcraftctl build
       cp -Tra "${SNAPCRAFT_PART_INSTALL}" /
@@ -31,10 +48,11 @@ parts:
     - zstd
     - busybox
     - systemd
-    - dracut-core
     - systemd-bootchart
     - snapd
     - sbsigntool
+    - dmsetup
+    - cpio
     override-pull: |
       snapcraftctl set-version $(dpkg-query --show --showformat='${Version}' linux-image-generic)
       snapcraftctl pull
@@ -67,9 +85,6 @@ parts:
         --change-section-vma .sbat=0x50000                          \
         --set-section-alignment .sbat=4096                          \
         kernel.efi-"${kernelver}"
-
-      # FIXME: This is not needed from dracut 052
-      objcopy --remove-section .cmdline kernel.efi-"${kernelver}"
 
       # FIXME: re-signing is not needed once the 2 previous FIXMEs are
       # fixed
